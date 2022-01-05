@@ -23,8 +23,8 @@ class RecipesSpider(scrapy.Spider):
             sys.exit("No Search Sites Provided!")
 
         # If the user did not provide any ALLOWED_DOMAINS, use the SEARCH_SITES
-        if not allowed_domains:
-            allowed_domains = urls
+        if not self.allowed_domains:
+            self.allowed_domains = urls
 
         # Make a Request for each URL
         for url in urls:

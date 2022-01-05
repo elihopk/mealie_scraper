@@ -1,3 +1,5 @@
+import os
+
 # Scrapy settings for mealie_scraper project
 #
 # For simplicity, this file contains only settings considered important or
@@ -31,7 +33,7 @@ ROBOTSTXT_OBEY = True
 #CONCURRENT_REQUESTS_PER_IP = 16
 
 # Disable cookies (enabled by default)
-#COOKIES_ENABLED = False
+COOKIES_ENABLED = False
 
 # Disable Telnet Console (enabled by default)
 #TELNETCONSOLE_ENABLED = False
@@ -50,9 +52,31 @@ ROBOTSTXT_OBEY = True
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
-#DOWNLOADER_MIDDLEWARES = {
-#    'mealie_scraper.middlewares.MealieScraperDownloaderMiddleware': 543,
-#}
+DOWNLOADER_MIDDLEWARES = {
+    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
+    'scrapy.downloadermiddlewares.retry.RetryMiddleware': None,
+    'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': None,
+    'scrapy_rotated_proxy.downloadmiddlewares.proxy.RotatedProxyMiddleware': 400,
+    'scrapy_fake_useragent.middleware.RandomUserAgentMiddleware': 401,
+    'scrapy_fake_useragent.middleware.RetryUserAgentMiddleware': 402,
+}
+
+if os.getenv("ENABLE_PROXY", default="false").lower() == "true":
+    ROTATED_PROXY_ENABLED = True
+    RANDOM_UA_PER_PROXY = True
+
+PROXY_STORAGE = 'scrapy_rotated_proxy.extensions.file_storage.FileProxyStorage'
+# TODO: Add documentation about this needing to be mounted as a volume.
+# See https://github.com/xiaowangwindow/scrapy-rotated-proxy
+PROXY_FILE_PATH = 'proxy.txt'
+
+FAKEUSERAGENT_PROVIDERS = [
+    'scrapy_fake_useragent.providers.FakeUserAgentProvider',
+    'scrapy_fake_useragent.providers.FakerProvider',
+    'scrapy_fake_useragent.providers.FixedUserAgentProvider'
+]
+
+FAKEUSERAGENT_FALLBACK = 'Mozilla/5.0 (Android; Mobile; rv:40.0)'
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
