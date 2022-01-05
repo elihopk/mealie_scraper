@@ -62,9 +62,11 @@ ROBOTSTXT_OBEY = True
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
-#    'mealie_scraper.pipelines.MealieScraperPipeline': 300,
-#}
+ITEM_PIPELINES = {
+    'mealie_scraper.pipelines.DuplicateCheck': 100,
+    'mealie_scraper.pipelines.AddItemToMealie': 200,
+    'mealie_scraper.pipelines.AddItemToCache': 300,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html

@@ -1,18 +1,10 @@
 import json
 import os
-import re
 import sys
 
 from datetime import date, datetime
 
 from mealie_scraper.items import MealieScraperItem
-
-# Fuzz imported to possibly add fuzzy searching capabilities.
-# We will want to build a local storage method for recipes to do this as it
-# would probably be slow otherwise. Could do this by either storing recipe slugs
-# in a file/db or maybe using Get Recipe Summary from the Mealie API? Should probably be done in
-# a pipeline though.
-from rapidfuzz import fuzz
 
 import scrapy
 
@@ -67,7 +59,7 @@ class RecipesSpider(scrapy.Spider):
                                 recipeData = jsonObj
                                 break
                             # If this is the last index and a Recipe @type wasn't found
-                            else if mdType == jsonObj["@type"][-1]:
+                            elif mdType == jsonObj["@type"][-1]:
                                 isRecipe = False
                     # @type was not a list
                     else:
@@ -88,7 +80,7 @@ class RecipesSpider(scrapy.Spider):
                         if mdType == "Recipe":
                             break
                         # If this is the last index and the last check failed, this is not a recipe
-                        else if mdType == recipeData["@type"][-1]:
+                        elif mdType == recipeData["@type"][-1]:
                             isRecipe = False                            
                 else:
                     # If there is one @type and one JSON object but no Recipe
