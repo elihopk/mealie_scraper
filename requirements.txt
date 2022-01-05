@@ -1,0 +1,4 @@
+requests
+scrapy
+scrapy-fake-useragent
+scrapy-rotated-proxy

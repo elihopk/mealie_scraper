@@ -6,12 +6,11 @@
 
 # useful for handling different item types with a single interface
 import os
-
-from itemadapter import ItemAdapter
-from scrapy.exceptions import DropItem
 import sqlite3
 
 import requests
+from itemadapter import ItemAdapter
+from scrapy.exceptions import DropItem
 
 
 class DuplicateCheck:
@@ -35,7 +34,7 @@ class AddItemToMealie:
         req = requests.post(
             os.getenv("API_PATH", default="") + "/recipes/create",
             headers={"Authorization": "Bearer " + os.getenv("API_TOKEN")},
-            json=dict(item)
+            json=dict(item),
         )
 
         if req.status_code != 200:
