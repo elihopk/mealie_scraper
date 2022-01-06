@@ -61,21 +61,25 @@ DOWNLOADER_MIDDLEWARES = {
     'scrapy_fake_useragent.middleware.RetryUserAgentMiddleware': 402,
 }
 
+# Verify that a proxy should be used and enable the appropriate settings if so
 if os.getenv("ENABLE_PROXY", default="false").lower() == "true":
     ROTATED_PROXY_ENABLED = True
     RANDOM_UA_PER_PROXY = True
 
+# Set path to proxy list
 PROXY_STORAGE = 'scrapy_rotated_proxy.extensions.file_storage.FileProxyStorage'
 # TODO: Add documentation about this needing to be mounted as a volume.
 # See https://github.com/xiaowangwindow/scrapy-rotated-proxy
 PROXY_FILE_PATH = 'proxy.txt'
 
+# Set providers for fake user agents
 FAKEUSERAGENT_PROVIDERS = [
     'scrapy_fake_useragent.providers.FakeUserAgentProvider',
     'scrapy_fake_useragent.providers.FakerProvider',
     'scrapy_fake_useragent.providers.FixedUserAgentProvider'
 ]
 
+# This user agent will be used if we fail to generate one
 FAKEUSERAGENT_FALLBACK = 'Mozilla/5.0 (Android; Mobile; rv:40.0)'
 
 # Enable or disable extensions

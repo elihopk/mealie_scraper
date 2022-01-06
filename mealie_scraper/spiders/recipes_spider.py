@@ -106,13 +106,13 @@ class RecipesSpider(scrapy.Spider):
             recipeItem["recipeCategory"] = recipeData["recipeCategory"]
 
             # Ensure that the rating is a float to round
-            if not isinstance(recipeData["aggregateRating"]["ratingValue"], float):
-                recipeItem["rating"] = round(float(recipeData["aggregateRating"]["ratingValue"]))
-            else:
-                recipeItem["rating"] = round(recipeData["aggregateRating"]["ratingValue"])
+            # if not isinstance(recipeData["aggregateRating"]["ratingValue"], float):
+            recipeItem["rating"] = round(float(recipeData["aggregateRating"]["ratingValue"]))
+            # else:
+            #     recipeItem["rating"] = round(recipeData["aggregateRating"]["ratingValue"])
 
-            recipeItem["dateAdded"] = date.today().strftime("%m/%d/%y")
-            recipeItem["dateUpdated"] = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
+            recipeItem["dateAdded"] = recipeData["datePublished"]
+            recipeItem["dateUpdated"] = recipeData["dateModified"]
             recipeItem["recipeYield"] = recipeData["recipeYield"]
             recipeItem["recipeIngredient"] = recipeData["recipeIngredient"]
             recipeItem["recipeInstructions"] = recipeData["recipeInstructions"]
