@@ -10,12 +10,14 @@ class DuplicateCheck:
     def process_item(self, item, spider):
         adapter = ItemAdapter(item)
         # Connect to the database
-        conn = sqlite3.connect("cache.db")
+        conn = sqlite3.connect("/usr/src/app/mealie_scraper/cache.db")
         cursor = conn.cursor()
 
         # TODO: Implement Fuzzy Duplicate Checking
         # Get exact matches for slug.
-        cursor.execute("SELECT id FROM cachedRecipes WHERE slug=?", adapter.get("slug"))
+        cursor.execute(
+            "SELECT id FROM cachedRecipes WHERE slug=?", (adapter.get("slug"),)
+        )
 
         # Check if anything was returned and if so drop the recipe
         if cursor.fetchall():
@@ -23,8 +25,10 @@ class DuplicateCheck:
             raise DropItem("Duplicate Check: Recipe Already Exists!")
 
         # Close db connection and continue to next pipeline
+        cursor.close()
         conn.close()
         return item
+
 
 # Pipeline to Add the Recipe to Mealie
 class AddItemToMealie:
@@ -37,29 +41,35 @@ class AddItemToMealie:
         )
 
         # Check that the request was successful and if not, drop the recipe
-        if req.status_code != 200:
+        if req.status_code != 201:
             raise DropItem(
                 "Add Item to Mealie: Post Request Failed! Status Code: "
-                + req.status_code
+                + str(req.status_code)
+                + " Error Type: "
+                + req.json()["detail"][0]["type"]
+                + " Error Message: "
+                + req.json()["detail"][0]["msg"]
             )
 
         # Continue to next pipeline
         return item
+
 
 # Pipeline to Include Current Recipe in Cache DB
 class AddItemToCache:
     def process_item(self, item, spider):
         adapter = ItemAdapter(item)
         # Open connection with cache DB
-        conn = sqlite3.connect("cache.db")
+        conn = sqlite3.connect("/usr/src/app/mealie_scraper/cache.db")
         cursor = conn.cursor()
 
         # Insert the current recipe
         cursor.execute(
-            "INSERT INTO cachedRecipes (slug) VALUES (?)", adapter.get("slug")
+            "INSERT INTO cachedRecipes (slug) VALUES (?)", (adapter.get("slug"),)
         )
 
         # Close DB connection
+        cursor.close()
         conn.close()
 
         # This is the last item pipeline

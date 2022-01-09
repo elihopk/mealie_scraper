@@ -19,7 +19,9 @@ NEWSPIDER_MODULE = 'mealie_scraper.spiders'
 #USER_AGENT = 'mealie_scraper (+http://www.yourdomain.com)'
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
+ROBOTSTXT_OBEY = False
+
+LOG_LEVEL = os.getenv("LOGLVL", default="INFO")
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
@@ -50,27 +52,31 @@ COOKIES_ENABLED = False
 #    'mealie_scraper.middlewares.MealieScraperSpiderMiddleware': 543,
 #}
 
-# Enable or disable downloader middlewares
-# See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
-DOWNLOADER_MIDDLEWARES = {
-    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
-    'scrapy.downloadermiddlewares.retry.RetryMiddleware': None,
-    'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': None,
-    'scrapy_rotated_proxy.downloadmiddlewares.proxy.RotatedProxyMiddleware': 400,
-    'scrapy_fake_useragent.middleware.RandomUserAgentMiddleware': 401,
-    'scrapy_fake_useragent.middleware.RetryUserAgentMiddleware': 402,
-}
-
 # Verify that a proxy should be used and enable the appropriate settings if so
-if os.getenv("ENABLE_PROXY", default="false").lower() == "true":
-    ROTATED_PROXY_ENABLED = True
+if os.getenv("PROXY_ENABLE", default="false").lower() == "true":
     RANDOM_UA_PER_PROXY = True
+    # Enable or disable downloader middlewares
+    # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
+    DOWNLOADER_MIDDLEWARES = {
+        'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
+        'scrapy.downloadermiddlewares.retry.RetryMiddleware': None,
+        'rotating_proxies.middlewares.RotatingProxyMiddleware': 582,
+        'rotating_proxies.middlewares.BanDetectionMiddleware': 583,
+        'scrapy_fake_useragent.middleware.RandomUserAgentMiddleware': 630,
+        'scrapy_fake_useragent.middleware.RetryUserAgentMiddleware': 640,
+    }
+else:
+    # Enable or disable downloader middlewares
+    # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
+    DOWNLOADER_MIDDLEWARES = {
+        'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
+        'scrapy.downloadermiddlewares.retry.RetryMiddleware': None,
+        'scrapy_fake_useragent.middleware.RandomUserAgentMiddleware': 630,
+        'scrapy_fake_useragent.middleware.RetryUserAgentMiddleware': 640,
+    }
 
-# Set path to proxy list
-PROXY_STORAGE = 'scrapy_rotated_proxy.extensions.file_storage.FileProxyStorage'
-# TODO: Add documentation about this needing to be mounted as a volume.
-# See https://github.com/xiaowangwindow/scrapy-rotated-proxy
-PROXY_FILE_PATH = 'proxy.txt'
+# See https://github.com/TeamHG-Memex/scrapy-rotating-proxies
+ROTATING_PROXY_LIST_PATH = '/usr/src/app/mealie_scraper/scrapy-proxy.txt'
 
 # Set providers for fake user agents
 FAKEUSERAGENT_PROVIDERS = [

@@ -9,4 +9,4 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 COPY . .
 
-CMD [ "python", "./start.py" ]
+CMD ["/bin/bash","./start.sh"]

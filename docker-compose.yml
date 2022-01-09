@@ -1,0 +1,36 @@
+version: "2.1"
+services:
+  mealie:
+    image: hkotel/mealie
+    container_name: mealie
+    restart: unless-stopped
+    ports:
+      - 9925:80
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+      - RECIPE_PUBLIC=true
+      - RECIPE_SHOW_NUTRITION=false
+      - RECIPE_SHOW_ASSETS=true
+      - RECIPE_LANDSCAPE_VIEW=true
+      - RECIPE_DISABLE_COMMENTS=false
+      - RECIPE_DISABLE_AMOUNT=false
+    volumes:
+      - ./mealie/:/app/data
+  mealie_scraper:
+    image: mealie_scraper
+    container_name: mealie_scraper
+    restart: unless-stopped
+    depends_on:
+      - "mealie"
+    environment:
+      - API_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsb25nX3Rva2VuIjp0cnVlLCJpZCI6MSwiZXhwIjoxNzk5MTY3NTA3fQ.iIhs_H7teW5HDZ-ctnpYTxYViihAvEMX6GXmxF7QYQM 
+      # When setting API path, be sure to user container-side port not host-side
+      - API_PATH=http://mealie:80/api
+      - PROXY_ENABLE=true
+      - SEARCH_SITES=https://www.simplyrecipes.com/ https://www.allrecipes.com/
+      - ALLOWED_DOMAINS=www.simplyrecipes.com www.allrecipes.com
+      - LOGLVL=DEBUG
+    volumes:
+      - ./mealie_scraper_dc/proxy.txt:/usr/src/app/mealie_scraper/proxy.txt

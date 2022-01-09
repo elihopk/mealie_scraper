@@ -2,17 +2,20 @@ import json
 import os
 import sys
 
-from datetime import date, datetime
-
-from mealie_scraper.items import MealieScraperItem
-
 import scrapy
+from mealie_scraper.items import MealieScraperItem
+from scrapy.linkextractors import LinkExtractor
 
 
 class RecipesSpider(scrapy.Spider):
     name = "recipes"
     # Pass allowed_domains as environment variable ALLOWED_DOMAINS
+    # TODO: Fix allowed_domains being required. Should be optional but breaks when empty
+    # Looks to be caused by LinkExtractor getting allowed domains when it's still empty
+    # Will probably need to move some code out of start_requests or maybe remove it alltogether
     allowed_domains = os.getenv("ALLOWED_DOMAINS", default="").split(" ")
+
+    le = LinkExtractor(allow_domains=allowed_domains)
 
     def start_requests(self):
         # Get urls from environment variable SEARCH_SITES separated by a space
@@ -24,13 +27,19 @@ class RecipesSpider(scrapy.Spider):
 
         # If the user did not provide any ALLOWED_DOMAINS, use the SEARCH_SITES
         if not self.allowed_domains:
-            self.allowed_domains = urls
+            self.allowed_domains = []
+
+            for domain in urls:
+                self.allowed_domains.append(domain.split("/")[2])
 
         # Make a Request for each URL
         for url in urls:
+            self.logger.debug("Starting Request for URL " + url)
             yield scrapy.Request(url=url, callback=self.parse)
 
     def parse(self, response):
+        self.logger.debug("Parsing Response for " + response.url)
+
         # Variable to Track Decision on if Page is a Recipe
         isRecipe = True
 
@@ -102,26 +111,39 @@ class RecipesSpider(scrapy.Spider):
             else:
                 recipeItem["image"] = recipeData["image"]["url"]
 
-            recipeItem["description"] = recipeData["description"]
-            recipeItem["recipeCategory"] = recipeData["recipeCategory"]
+            if "description" in recipeData:
+                recipeItem["description"] = recipeData["description"]
+            if "recipeCategory" in recipeData:
+                recipeItem["recipeCategory"] = recipeData["recipeCategory"]
+            if "aggregateRating" in recipeData:
+                recipeItem["rating"] = round(float(recipeData["aggregateRating"]["ratingValue"]))
+            # if "datePublished" in recipeData:
+            #     recipeItem["dateAdded"] = recipeData["datePublished"]
+            # if "dateModified" in recipeData:
+            #     recipeItem["dateUpdated"] = recipeData["dateModified"]
+            if "recipeYield" in recipeData:
+                recipeItem["recipeYield"] = recipeData["recipeYield"]
+            if "recipeIngredient" in recipeData:
+                recipeItem["recipeIngredient"] = []
+                for ingredient in recipeData["recipeIngredient"]:
+                    recipeItem["recipeIngredient"].append({
+                        "title": ingredient
+                    })
+            if "recipeInstructions" in recipeData:
+                recipeItem["recipeInstructions"] = recipeData["recipeInstructions"]
+            if "totalTime" in recipeData:
+                recipeItem["totalTime"] = recipeData["totalTime"]
+            if "prepTime" in recipeData:
+                recipeItem["prepTime"] = recipeData["prepTime"]
+            if "cookTime" in recipeData:
+                recipeItem["performTime"] = recipeData["cookTime"]
 
-            # Ensure that the rating is a float to round
-            # if not isinstance(recipeData["aggregateRating"]["ratingValue"], float):
-            recipeItem["rating"] = round(float(recipeData["aggregateRating"]["ratingValue"]))
-            # else:
-            #     recipeItem["rating"] = round(recipeData["aggregateRating"]["ratingValue"])
-
-            recipeItem["dateAdded"] = recipeData["datePublished"]
-            recipeItem["dateUpdated"] = recipeData["dateModified"]
-            recipeItem["recipeYield"] = recipeData["recipeYield"]
-            recipeItem["recipeIngredient"] = recipeData["recipeIngredient"]
-            recipeItem["recipeInstructions"] = recipeData["recipeInstructions"]
-            recipeItem["totalTime"] = recipeData["totalTime"]
-            recipeItem["prepTime"] = recipeData["prepTime"]
-            recipeItem["performTime"] = recipeData["cookTime"]
             recipeItem["orgURL"] = response.url
 
             yield recipeItem
         # Follow all links on page if the page is not a recipe
         else:
-            yield from response.follow_all(css="a", callback=self.parse)
+            self.logger.debug("Recipe not found on \"" + response.url + "\"... Looking for links.")
+
+            for ln in self.le.extract_links(response):
+                yield scrapy.Request(url=ln.url, callback=self.parse)
