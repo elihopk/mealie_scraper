@@ -19,14 +19,14 @@ services:
     volumes:
       - ./mealie/:/app/data
   mealie_scraper:
-    image: mealie_scraper
+    image: ghcr.io/elihopk/mealie_scraper/mealie_scraper:latest
     container_name: mealie_scraper
     restart: unless-stopped
     depends_on:
       - "mealie"
     environment:
       - API_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsb25nX3Rva2VuIjp0cnVlLCJpZCI6MSwiZXhwIjoxNzk5NTYzMTkyfQ.VlrXMTkbUshIavte2204XWJ4zD_Hm3gQU-EZ6qbEdO8 
-      # When setting API path, be sure to user container-side port not host-side
+      # When setting API path, be sure to use container-side port not host-side
       - API_PATH=http://mealie:80/api
       - PROXY_ENABLE=true
       - SEARCH_SITES=https://www.simplyrecipes.com/
