@@ -44,7 +44,9 @@ class RecipesSpider(scrapy.Spider):
         isRecipe = True
 
         # All we'll need from any page for this is the JSON Linked Data and later links for all referenced pages
-        recipeDataBytes = response.xpath('//script[@type="application/ld+json"]//text()').get()
+        recipeDataBytes = response.xpath(
+            '//script[@type="application/ld+json"]//text()'
+        ).get()
         recipeData = None
 
         # Verify that the page contained JSON-LD
@@ -90,12 +92,12 @@ class RecipesSpider(scrapy.Spider):
                             break
                         # If this is the last index and the last check failed, this is not a recipe
                         elif mdType == recipeData["@type"][-1]:
-                            isRecipe = False                            
+                            isRecipe = False
                 else:
                     # If there is one @type and one JSON object but no Recipe
                     if recipeData["@type"] != "Recipe":
                         isRecipe = False
-        
+
         # Verify finally that the JSON-LD had a recipe
         if isRecipe:
             # Create an Item to start extracting JSON data into
@@ -103,8 +105,7 @@ class RecipesSpider(scrapy.Spider):
 
             # Extract Item properties from recipe JSON data
             recipeItem["name"] = recipeData["name"]
-            recipeItem["slug"] = recipeData["name"].strip().lower().replace(" ", "-")
-            
+
             # If there are multiple images only use the first one
             if isinstance(recipeData["image"], list):
                 recipeItem["image"] = recipeData["image"][0]["url"]
@@ -116,19 +117,27 @@ class RecipesSpider(scrapy.Spider):
             if "recipeCategory" in recipeData:
                 recipeItem["recipeCategory"] = recipeData["recipeCategory"]
             if "aggregateRating" in recipeData:
-                recipeItem["rating"] = round(float(recipeData["aggregateRating"]["ratingValue"]))
+                recipeItem["rating"] = round(
+                    float(recipeData["aggregateRating"]["ratingValue"])
+                )
+
+            # Will need special formatting for datePublished and dateModified.
+            # Some websites provide this in ISO8601 format
+
             # if "datePublished" in recipeData:
             #     recipeItem["dateAdded"] = recipeData["datePublished"]
             # if "dateModified" in recipeData:
             #     recipeItem["dateUpdated"] = recipeData["dateModified"]
+
             if "recipeYield" in recipeData:
-                recipeItem["recipeYield"] = recipeData["recipeYield"]
+                if isinstance(recipeData["recipeYield"], list):
+                    recipeItem["recipeYield"] = recipeData["recipeYield"][0]
+                else:
+                    recipeItem["recipeYield"] = recipeData["recipeYield"]
             if "recipeIngredient" in recipeData:
                 recipeItem["recipeIngredient"] = []
                 for ingredient in recipeData["recipeIngredient"]:
-                    recipeItem["recipeIngredient"].append({
-                        "title": ingredient
-                    })
+                    recipeItem["recipeIngredient"].append({"title": ingredient})
             if "recipeInstructions" in recipeData:
                 recipeItem["recipeInstructions"] = recipeData["recipeInstructions"]
             if "totalTime" in recipeData:
@@ -143,7 +152,9 @@ class RecipesSpider(scrapy.Spider):
             yield recipeItem
         # Follow all links on page if the page is not a recipe
         else:
-            self.logger.debug("Recipe not found on \"" + response.url + "\"... Looking for links.")
+            self.logger.debug(
+                'Recipe not found on "' + response.url + '"... Looking for links.'
+            )
 
             for ln in self.le.extract_links(response):
                 yield scrapy.Request(url=ln.url, callback=self.parse)

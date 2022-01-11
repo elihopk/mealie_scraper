@@ -42,6 +42,8 @@ def initDB():
         # Insert all recipe slugs to the database
         cursor.executemany("INSERT INTO cachedRecipes (slug) VALUES (?)", recipes)
 
+        conn.commit()
+
         # Close the database connection when done
         cursor.close()
         conn.close()

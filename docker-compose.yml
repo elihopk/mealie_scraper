@@ -25,12 +25,12 @@ services:
     depends_on:
       - "mealie"
     environment:
-      - API_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsb25nX3Rva2VuIjp0cnVlLCJpZCI6MSwiZXhwIjoxNzk5MTY3NTA3fQ.iIhs_H7teW5HDZ-ctnpYTxYViihAvEMX6GXmxF7QYQM 
+      - API_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsb25nX3Rva2VuIjp0cnVlLCJpZCI6MSwiZXhwIjoxNzk5NTYzMTkyfQ.VlrXMTkbUshIavte2204XWJ4zD_Hm3gQU-EZ6qbEdO8 
       # When setting API path, be sure to user container-side port not host-side
       - API_PATH=http://mealie:80/api
       - PROXY_ENABLE=true
-      - SEARCH_SITES=https://www.simplyrecipes.com/ https://www.allrecipes.com/
-      - ALLOWED_DOMAINS=www.simplyrecipes.com www.allrecipes.com
+      - SEARCH_SITES=https://www.simplyrecipes.com/
+      - ALLOWED_DOMAINS=www.simplyrecipes.com
       - LOGLVL=DEBUG
     volumes:
       - ./mealie_scraper_dc/proxy.txt:/usr/src/app/mealie_scraper/proxy.txt

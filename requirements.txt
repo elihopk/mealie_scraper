@@ -1,6 +1,8 @@
+isodate
 pproxy
 pycryptodome
 requests
 scrapy
+ScrapyProxyCompat
 scrapy-fake-useragent
 scrapy-rotating-proxies
