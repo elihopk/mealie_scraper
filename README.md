@@ -17,7 +17,9 @@ docker run \
 ```
 The `proxy.txt` volume is mandatory if using rotating proxies and should always be mounted to `/usr/src/app/mealie_scraper/proxy.txt`.
 
-The `proxy.txt` file should contain a list of proxies, one per line, in [pproxy](https://pypi.org/project/pproxy/) format: `[http, socks, ss, ssl, secure (Or a combination of these)]://ip_address:port#username:password`
+The `proxy.txt` file should contain a list of proxies, one per line, in [pproxy](https://pypi.org/project/pproxy/) format:
+
+`[http, socks, ss, ssl, secure (Or a combination of these)]://ip_address:port#username:password`
 
 For example:
 ```
