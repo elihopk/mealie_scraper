@@ -13,11 +13,13 @@ docker run \
     -e API_PATH=http://mealie:80/api \
     -e SEARCH_SITES=https://www.simplyrecipes.com/ \
     -e ALLOWED_DOMAINS=www.simplyrecipes.com \
-    elihopk/mealie_scraper
+    ghcr.io/elihopk/mealie_scraper/mealie_scraper:latest
 ```
 The `proxy.txt` volume is mandatory if using rotating proxies and should always be mounted to `/usr/src/app/mealie_scraper/proxy.txt`.
 
-The `proxy.txt` file should contain a list of proxies, one per line, in [pproxy](https://pypi.org/project/pproxy/) format: `[http, socks, ss, ssl, secure (Or a combination of these)]://ip_address:port#username:password`
+The `proxy.txt` file should contain a list of proxies, one per line, in [pproxy](https://pypi.org/project/pproxy/) format:
+
+`[http, socks, ss, ssl, secure (Or a combination of these)]://ip_address:port#username:password`
 
 For example:
 ```
