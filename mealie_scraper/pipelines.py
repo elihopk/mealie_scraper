@@ -2,11 +2,13 @@ import os
 import re
 import sqlite3
 from html import unescape
-from isodate import parse_duration
 
 import requests
+import unidecode
+from isodate import parse_duration
 from itemadapter import ItemAdapter
 from scrapy.exceptions import DropItem
+
 
 # Pipeline to Unescape HTML Characters and Ensure Text is Properly Formatted
 class UnescapeHTML:
@@ -43,7 +45,21 @@ class AddSlug:
         adapter["slug"] = adapter.get("name").strip()
         adapter["slug"] = adapter.get("slug").lower()
         adapter["slug"] = adapter.get("slug").replace(" ", "-")
+        adapter["slug"] = unidecode.unidecode(adapter.get("slug"))
         adapter["slug"] = re.sub(r"[^a-zA-Z0-9-]", "", adapter.get("slug"))
+
+        lastchar = ""
+        newslug = ""
+
+        # Remove Repeating Hyphens
+        for char in adapter.get("slug"):
+            if char == "-" and lastchar == "-":
+                continue
+
+            newslug += char
+            lastchar = char
+
+        adapter["slug"] = newslug
 
         return item
 

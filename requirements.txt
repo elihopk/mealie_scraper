@@ -6,3 +6,4 @@ scrapy
 ScrapyProxyCompat
 scrapy-fake-useragent
 scrapy-rotating-proxies
+unidecode
