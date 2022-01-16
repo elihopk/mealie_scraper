@@ -15,25 +15,25 @@ class RecipesSpider(scrapy.Spider):
     # Will probably need to move some code out of start_requests or maybe remove it alltogether
     allowed_domains = os.getenv("ALLOWED_DOMAINS", default="").split(" ")
 
+    # Get urls from environment variable SEARCH_SITES separated by a space
+    urls = os.getenv("SEARCH_SITES", default="").split(" ")
+
+    # If the user did not provide any ALLOWED_DOMAINS, use the SEARCH_SITES
+    if not allowed_domains:
+        allowed_domains = []
+
+        for domain in urls:
+            allowed_domains.append(domain.split("/")[2])
+
     le = LinkExtractor(allow_domains=allowed_domains)
 
     def start_requests(self):
-        # Get urls from environment variable SEARCH_SITES separated by a space
-        urls = os.getenv("SEARCH_SITES", default="").split(" ")
-
         # Exit if the user didn't provide any URLs
-        if not urls:
+        if not self.urls:
             sys.exit("No Search Sites Provided!")
 
-        # If the user did not provide any ALLOWED_DOMAINS, use the SEARCH_SITES
-        if not self.allowed_domains:
-            self.allowed_domains = []
-
-            for domain in urls:
-                self.allowed_domains.append(domain.split("/")[2])
-
         # Make a Request for each URL
-        for url in urls:
+        for url in self.urls:
             self.logger.debug("Starting Request for URL " + url)
             yield scrapy.Request(url=url, callback=self.parse)
 
@@ -52,6 +52,8 @@ class RecipesSpider(scrapy.Spider):
         # Verify that the page contained JSON-LD
         if recipeDataBytes:
             recipeData = json.loads(recipeDataBytes)
+            if "@graph" in recipeData:
+                recipeData = recipeData["@graph"]
         else:
             isRecipe = False
 
@@ -108,9 +110,15 @@ class RecipesSpider(scrapy.Spider):
 
             # If there are multiple images only use the first one
             if isinstance(recipeData["image"], list):
-                recipeItem["image"] = recipeData["image"][0]["url"]
+                if isinstance(recipeData["image"][0], str):
+                    recipeItem["image"] = recipeData["image"][0]
+                else:
+                    recipeItem["image"] = recipeData["image"][0]["url"]
             else:
-                recipeItem["image"] = recipeData["image"]["url"]
+                if isinstance(recipeData["image"][0], str):
+                    recipeItem["image"] = recipeData["image"][0]
+                else:
+                    recipeItem["image"] = recipeData["image"]["url"]
 
             if "description" in recipeData:
                 recipeItem["description"] = recipeData["description"]
@@ -123,6 +131,7 @@ class RecipesSpider(scrapy.Spider):
 
             # Will need special formatting for datePublished and dateModified.
             # Some websites provide this in ISO8601 format
+            # TODO: Handle datePublished and dateModified
 
             # if "datePublished" in recipeData:
             #     recipeItem["dateAdded"] = recipeData["datePublished"]
@@ -139,7 +148,15 @@ class RecipesSpider(scrapy.Spider):
                 for ingredient in recipeData["recipeIngredient"]:
                     recipeItem["recipeIngredient"].append({"title": ingredient})
             if "recipeInstructions" in recipeData:
-                recipeItem["recipeInstructions"] = recipeData["recipeInstructions"]
+                if "itemListElement" in recipeData["recipeInstructions"][0]:
+                    tempInstructions = []
+
+                    for section in recipeData["recipeInstructions"]:
+                        tempInstructions = tempInstructions + section["itemListElement"]
+
+                    recipeItem["recipeInstructions"] = tempInstructions
+                else:
+                    recipeItem["recipeInstructions"] = recipeData["recipeInstructions"]
             if "totalTime" in recipeData:
                 recipeItem["totalTime"] = recipeData["totalTime"]
             if "prepTime" in recipeData:
