@@ -26,7 +26,7 @@ def initDB():
             headers={"Authorization": "Bearer " + os.getenv("API_TOKEN")}
         )
     except requests.RequestException as err:
-        print(f"populateDB: Received Request Error! {err=}, {type(err)=}")
+        print(f"populateDB: Mealie API not up yet! Retrying in 15 seconds...")
         time.sleep(15)
         initDB()
         return

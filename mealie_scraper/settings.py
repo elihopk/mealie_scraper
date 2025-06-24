@@ -80,7 +80,6 @@ ROTATING_PROXY_LIST_PATH = '/usr/src/app/mealie_scraper/scrapy-proxy.txt'
 
 # Set providers for fake user agents
 FAKEUSERAGENT_PROVIDERS = [
-    'scrapy_fake_useragent.providers.FakeUserAgentProvider',
     'scrapy_fake_useragent.providers.FakerProvider',
     'scrapy_fake_useragent.providers.FixedUserAgentProvider'
 ]
