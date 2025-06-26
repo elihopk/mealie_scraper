@@ -87,6 +87,10 @@ FAKEUSERAGENT_PROVIDERS = [
 # This user agent will be used if we fail to generate one
 FAKEUSERAGENT_FALLBACK = 'Mozilla/5.0 (Android; Mobile; rv:40.0)'
 
+ROTATING_PROXY_BACKOFF_BASE = 30
+ROTATING_PROXY_BACKOFF_CAP = 120
+
+
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
 #EXTENSIONS = {
@@ -99,10 +103,9 @@ ITEM_PIPELINES = {
     'mealie_scraper.pipelines.UnescapeHTML': 100,
     'mealie_scraper.pipelines.AddSlug': 200,
     'mealie_scraper.pipelines.DuplicateCheck': 300,
-    'mealie_scraper.pipelines.ParseDurations': 400,
+    'mealie_scraper.pipelines.ParseIngredients': 350,
     'mealie_scraper.pipelines.AddItemToMealie': 500,
     'mealie_scraper.pipelines.AddItemToCache': 600,
-    'mealie_scraper.pipelines.AddRecipeImage': 700,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

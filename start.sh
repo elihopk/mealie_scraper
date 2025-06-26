@@ -1,7 +1,11 @@
 #!/bin/bash
 
+export API_TOKEN="${API_TOKEN:-$(cat /run/secrets/api_token 2>/dev/null)}"
+
 # Populate the cache DB
-python populateDB.py
+python populateDB.py &
+
+populatePID=$!
 
 if [[ "${PROXY_ENABLE,,}" == "true" ]]
 then
@@ -16,6 +20,9 @@ fi
 # Track how many times the crawler has been started
 i=0
 
+echo -e "\e[32mSTART:\e[39m Waiting for cache to populate"
+wait $populatePID
+
 # Run crawler repeatedly until container is brought down
 while true
 do
@@ -24,7 +31,7 @@ do
     scrapy crawl recipes
     if [ -z ${TIME_TO_WAIT} ]
     then
-        sleep 5m
+        sleep 7d
     else
         sleep "${TIME_TO_WAIT}"
     fi

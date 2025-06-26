@@ -15,7 +15,7 @@ docker run \
     -e ALLOWED_DOMAINS=www.simplyrecipes.com \
     ghcr.io/elihopk/mealie_scraper/mealie_scraper:latest
 ```
-The `proxy.txt` volume is mandatory if using rotating proxies and should always be mounted to `/usr/src/app/mealie_scraper/proxy.txt`.
+The `proxy.txt` volume is mandatory if using rotating proxies and should always be mounted to `/usr/src/app/mealie_scraper/proxy.txt` or loaded via a secret named `proxy`.
 
 The `proxy.txt` file should contain a list of proxies, one per line, in [pproxy](https://pypi.org/project/pproxy/) format:
 
@@ -34,7 +34,7 @@ socks5://proxyip.com:2323#Good:Creds
   - Mandatory
   - A web address that the Mealie API can be accessed at
 - API_TOKEN
-  - Mandatory
+  - Mandatory (or via `api_token` secret)
   - An API token created by a Mealie user which the scraper will use to access the Mealie API
 - LOGLVL
   - Optional
@@ -68,4 +68,3 @@ socks5://proxyip.com:2323#Good:Creds
 # Planned Features
 - [ ] Fuzzy Slug Cache Searching
 - [ ] Default ALLOWED_DOMAINS = SEARCH_SITES
-- [ ] Automatically pick best recipe image

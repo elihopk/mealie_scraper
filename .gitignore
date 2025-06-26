@@ -1,3 +1,4 @@
-mealie_scraper/metadata_examples/
 mealie/
-mealie_scraper_dc
+api_token.txt
+proxy.txt
+.venv

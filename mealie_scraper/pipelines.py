@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import sqlite3
@@ -23,7 +24,7 @@ class UnescapeHTML:
         if isinstance(adapter.get("recipeCategory"), list):
             for i, cat in enumerate(adapter.get("recipeCategory")):
                 adapter["recipeCategory"][i] = unescape(cat)
-        else:
+        elif adapter.get("recipeCategory"):
             adapter["recipeCategory"] = unescape(adapter.get("recipeCategory"))
 
         if adapter.get("recipeIngredient"):
@@ -88,30 +89,49 @@ class DuplicateCheck:
         conn.close()
         return item
 
-
-# Pipeline to Parse the ISO Formatted Durations to be Human Readable
-class ParseDurations:
+class ParseIngredients:
     def process_item(self, item, spider):
         adapter = ItemAdapter(item)
 
-        if adapter.get("totalTime"):
-            adapter["totalTime"] = str(parse_duration(adapter.get("totalTime")))
-        if adapter.get("prepTime"):
-            adapter["prepTime"] = str(parse_duration(adapter.get("prepTime")))
-        if adapter.get("performTime"):
-            adapter["performTime"] = str(parse_duration(adapter.get("performTime")))
+        recipeIngredient = adapter.get("recipeIngredient")
+        newRecipeIngredients = []
 
-        return item
+        # Parse the ingredients to ensure they are in the correct format
+        if isinstance(recipeIngredient, list):
+            for ingredient in recipeIngredient:
+                if isinstance(ingredient, dict):
+                    for value in ingredient.values():
+                        if isinstance(value, str):
+                            newRecipeIngredients.append(value)
+                        else:
+                            raise DropItem(
+                                "recipeIngredient must be a list of strings or dictionaries with string values."
+                            )
+                elif isinstance(ingredient, str):
+                    newRecipeIngredients.append(ingredient)
+        else:
+            raise DropItem("recipeIngredient must be a list of ingredients.")
 
+        adapter["recipeIngredient"] = newRecipeIngredients
+
+        return item 
 
 # Pipeline to Add the Recipe to Mealie
 class AddItemToMealie:
     def process_item(self, item, spider):
+        item_temp = dict(item)
+
+        item_temp["@context"] = "https://schema.org"
+        item_temp["@type"] = "Recipe"
+
         # Make request to /recipes/create endpoint with appropriate options
         req = requests.post(
-            os.getenv("API_PATH", default="") + "/recipes/create",
+            os.getenv("API_PATH", default="") + "/recipes/create/html-or-json",
             headers={"Authorization": "Bearer " + os.getenv("API_TOKEN")},
-            json=dict(item),
+            json={
+                "includeTags": False,
+                "data": json.dumps(item_temp),
+            },
         )
 
         # Check that the request was successful and if not, drop the recipe
@@ -122,7 +142,7 @@ class AddItemToMealie:
                 )
             except:
                 raise DropItem(
-                    "Add Item to Mealie: Post Request and Retrieving JSON Error Failed! Status Code: " + str(req.status_code)
+                    "Add Item to Mealie: Post Request and Retrieving JSON Error Failed! Status Code: " + str(req.status_code) + "\nText: " + req.text
                 )
 
         # Continue to next pipeline
@@ -149,29 +169,4 @@ class AddItemToCache:
         conn.close()
 
         # This is the last item pipeline
-        return item
-
-
-# Pipeline to Update Recipe Images
-class AddRecipeImage:
-    def process_item(self, item, spider):
-        adapter = ItemAdapter(item)
-
-        # Send put request
-        req = requests.post(
-            os.getenv("API_PATH", default="")
-            + "/recipes/"
-            + adapter.get("slug")
-            + "/image",
-            headers={"Authorization": "Bearer " + os.getenv("API_TOKEN")},
-            json={
-                # TODO: Make this a list and let mealie pick the best image
-                "url": adapter.get("image")
-            },
-        )
-
-        # Verify that the request was successful
-        if req.status_code != 200:
-            raise DropItem("Add Recipe Image: Post Request Failed! " + str(req.json()))
-
         return item

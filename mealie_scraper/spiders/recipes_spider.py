@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import sys
 
 import scrapy
@@ -47,15 +48,20 @@ class RecipesSpider(scrapy.Spider):
         recipeDataBytes = response.xpath(
             '//script[@type="application/ld+json"]//text()'
         ).get()
+
         recipeData = None
 
         # Verify that the page contained JSON-LD
         if recipeDataBytes:
+            # Remove unescaped control characters except for valid whitespace
+            recipeDataBytes = re.sub(r'[\x00-\x1F\x7F]', '', recipeDataBytes)
             recipeData = json.loads(recipeDataBytes)
             if "@graph" in recipeData:
                 recipeData = recipeData["@graph"]
         else:
             isRecipe = False
+
+        recipe = None
 
         # JSON-LD must have been loaded to run additional checks for a recipe
         if isRecipe:
@@ -69,7 +75,7 @@ class RecipesSpider(scrapy.Spider):
                         for mdType in jsonObj["@type"]:
                             # Check if the current @type is a Recipe
                             if mdType == "Recipe":
-                                recipeData = jsonObj
+                                recipe = jsonObj
                                 break
                             # If this is the last index and a Recipe @type wasn't found
                             elif mdType == jsonObj["@type"][-1]:
@@ -78,11 +84,11 @@ class RecipesSpider(scrapy.Spider):
                     else:
                         # Check if the @type is Recipe
                         if jsonObj["@type"] == "Recipe":
-                            recipeData = jsonObj
+                            recipe = jsonObj
                             break
-                    # If the last JSON object was not a recipe
-                    if jsonObj == recipeData[-1]:
-                        isRecipe = False
+                # If the last JSON object was not a recipe
+                if recipe is None:
+                    isRecipe = False
             # JSON-LD was not provided as a list
             else:
                 # Check if @type was provided as a list
@@ -91,10 +97,11 @@ class RecipesSpider(scrapy.Spider):
                     for mdType in recipeData["@type"]:
                         # If a recipe is found, nothing further needs done
                         if mdType == "Recipe":
+                            recipe = recipeData
                             break
-                        # If this is the last index and the last check failed, this is not a recipe
-                        elif mdType == recipeData["@type"][-1]:
-                            isRecipe = False
+                    if recipe is None:
+                        # If the last @type was not a Recipe
+                        isRecipe = False
                 else:
                     # If there is one @type and one JSON object but no Recipe
                     if recipeData["@type"] != "Recipe":
@@ -106,28 +113,29 @@ class RecipesSpider(scrapy.Spider):
             recipeItem = MealieScraperItem()
 
             # Extract Item properties from recipe JSON data
-            recipeItem["name"] = recipeData["name"]
+            recipeItem["name"] = recipe["name"]
 
             # If there are multiple images only use the first one
-            if isinstance(recipeData["image"], list):
-                if isinstance(recipeData["image"][0], str):
-                    recipeItem["image"] = recipeData["image"][0]
-                else:
-                    recipeItem["image"] = recipeData["image"][0]["url"]
+            if "image" in recipe.keys():
+                if isinstance(recipe["image"], list):
+                    if isinstance(recipe["image"][0], str):
+                        recipeItem["image"] = recipe["image"][0]
+                    else:
+                        recipeItem["image"] = recipe["image"][0]["url"]
             else:
-                if isinstance(recipeData["image"][0], str):
-                    recipeItem["image"] = recipeData["image"][0]
+                if isinstance(recipe["image"], str):
+                    recipeItem["image"] = recipe["image"]
                 else:
-                    recipeItem["image"] = recipeData["image"]["url"]
+                    recipeItem["image"] = recipe["image"]["url"]
 
-            if "description" in recipeData:
-                recipeItem["description"] = recipeData["description"]
-            if "recipeCategory" in recipeData:
-                recipeItem["recipeCategory"] = recipeData["recipeCategory"]
-            if "aggregateRating" in recipeData:
-                recipeItem["rating"] = round(
-                    float(recipeData["aggregateRating"]["ratingValue"])
-                )
+            if "description" in recipe:
+                recipeItem["description"] = recipe["description"]
+            if "recipeCategory" in recipe:
+                recipeItem["recipeCategory"] = recipe["recipeCategory"]
+            if "aggregateRating" in recipe:
+                recipeItem["aggregateRating"] = recipe["aggregateRating"]
+            if "performTime" in recipe:
+                recipeItem["cookTime"] = recipe["performTime"]
 
             # Will need special formatting for datePublished and dateModified.
             # Some websites provide this in ISO8601 format
@@ -138,32 +146,33 @@ class RecipesSpider(scrapy.Spider):
             # if "dateModified" in recipeData:
             #     recipeItem["dateUpdated"] = recipeData["dateModified"]
 
-            if "recipeYield" in recipeData:
-                if isinstance(recipeData["recipeYield"], list):
-                    recipeItem["recipeYield"] = recipeData["recipeYield"][0]
+            if "recipeYield" in recipe:
+                if isinstance(recipe["recipeYield"], list):
+                    recipeItem["recipeYield"] = recipe["recipeYield"][0]
                 else:
-                    recipeItem["recipeYield"] = recipeData["recipeYield"]
-            if "recipeIngredient" in recipeData:
+                    recipeItem["recipeYield"] = recipe["recipeYield"]
+            if "recipeIngredient" in recipe:
                 recipeItem["recipeIngredient"] = []
-                for ingredient in recipeData["recipeIngredient"]:
+                for ingredient in recipe["recipeIngredient"]:
                     recipeItem["recipeIngredient"].append({"title": ingredient})
-            if "recipeInstructions" in recipeData:
-                if "itemListElement" in recipeData["recipeInstructions"][0]:
+            if "recipeInstructions" in recipe:
+                if "itemListElement" in recipe["recipeInstructions"][0]:
                     tempInstructions = []
 
-                    for section in recipeData["recipeInstructions"]:
+                    for section in recipe["recipeInstructions"]:
                         tempInstructions = tempInstructions + section["itemListElement"]
 
                     recipeItem["recipeInstructions"] = tempInstructions
                 else:
-                    recipeItem["recipeInstructions"] = recipeData["recipeInstructions"]
-            if "totalTime" in recipeData:
-                recipeItem["totalTime"] = recipeData["totalTime"]
-            if "prepTime" in recipeData:
-                recipeItem["prepTime"] = recipeData["prepTime"]
-            if "cookTime" in recipeData:
-                recipeItem["performTime"] = recipeData["cookTime"]
-
+                    recipeItem["recipeInstructions"] = recipe["recipeInstructions"]
+            if "totalTime" in recipe:
+                recipeItem["totalTime"] = recipe["totalTime"]
+            if "prepTime" in recipe:
+                recipeItem["prepTime"] = recipe["prepTime"]
+            if "cookTime" in recipe:
+                recipeItem["cookTime"] = recipe["cookTime"]
+            if "keywords" in recipe:
+                recipeItem["keywords"] = recipe["keywords"]
             recipeItem["orgURL"] = response.url
 
             yield recipeItem
@@ -174,4 +183,6 @@ class RecipesSpider(scrapy.Spider):
             )
 
             for ln in self.le.extract_links(response):
-                yield scrapy.Request(url=ln.url, callback=self.parse)
+                yield scrapy.Request(url=ln.url, callback=self.parse, meta={
+                    "download_timeout": 15,
+                })

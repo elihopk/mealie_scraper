@@ -1,36 +1,39 @@
-version: "2.1"
 services:
   mealie:
-    image: hkotel/mealie
+    image: ghcr.io/mealie-recipes/mealie:latest
     container_name: mealie
     restart: unless-stopped
     ports:
-      - 9925:80
+      - 80:9000
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=America/New_York
-      - RECIPE_PUBLIC=true
-      - RECIPE_SHOW_NUTRITION=false
-      - RECIPE_SHOW_ASSETS=true
-      - RECIPE_LANDSCAPE_VIEW=true
-      - RECIPE_DISABLE_COMMENTS=false
-      - RECIPE_DISABLE_AMOUNT=false
     volumes:
       - ./mealie/:/app/data
   mealie_scraper:
-    image: ghcr.io/elihopk/mealie_scraper/mealie_scraper:latest
+    build:
+      dockerfile: ./Dockerfile
     container_name: mealie_scraper
     restart: unless-stopped
     depends_on:
       - "mealie"
+    secrets:
+      - api_token
+      - proxy
     environment:
-      - API_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsb25nX3Rva2VuIjp0cnVlLCJpZCI6MSwiZXhwIjoxNzk5NTYzMTkyfQ.VlrXMTkbUshIavte2204XWJ4zD_Hm3gQU-EZ6qbEdO8 
       # When setting API path, be sure to use container-side port not host-side
-      - API_PATH=http://mealie:80/api
+      - API_PATH=http://mealie:9000/api
       - PROXY_ENABLE=true
       - SEARCH_SITES=https://www.simplyrecipes.com/
       - ALLOWED_DOMAINS=www.simplyrecipes.com
       - LOGLVL=DEBUG
-    volumes:
-      - ./mealie_scraper_dc/proxy.txt:/usr/src/app/mealie_scraper/proxy.txt
+    # Can be used instead of proxy secret
+    # volumes:
+    #   - ./mealie_scraper_dc/proxy.txt:/usr/src/app/mealie_scraper/proxy.txt
+
+secrets:
+  api_token:
+    file: ./api_token.txt
+  proxy:
+    file: ./proxy.txt

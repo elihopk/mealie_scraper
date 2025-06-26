@@ -21,12 +21,11 @@ def initDB():
     try:
         # Get a summary of all recipes
         req = requests.get(
-            os.getenv("API_PATH", default="") + "/recipes/summary",
-            params={"limit": 99999999},
+            os.getenv("API_PATH", default="") + "/recipes",
+            params={"perPage": 999999999},
             headers={"Authorization": "Bearer " + os.getenv("API_TOKEN")}
         )
     except requests.RequestException as err:
-        print(f"populateDB: Mealie API not up yet! Retrying in 15 seconds...")
         time.sleep(15)
         initDB()
         return
@@ -36,7 +35,7 @@ def initDB():
         recipes = []
 
         # Get only recipe slugs as a list
-        for recipe in req.json():
+        for recipe in req.json()["items"]:
             recipes.append((recipe["slug"],))
 
         # Insert all recipe slugs to the database
