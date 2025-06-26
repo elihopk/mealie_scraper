@@ -63,7 +63,7 @@ socks5://proxyip.com:2323#Good:Creds
   - A space separated list of web addresses to be used as starting points for the scraper. These should be full addresses including protocols and paths.
 - TIME_TO_WAIT
   - Optional
-    - Default: 5m
+    - Default: 7d
   - The amount of time that the scraper should wait to begin crawling again after finishing crawling. This should be formatted as a number and a suffix with d for days, h for hours, m for minutes, and s for seconds.
 # Planned Features
 - [ ] Fuzzy Slug Cache Searching
