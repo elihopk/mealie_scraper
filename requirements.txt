@@ -1,6 +1,4 @@
-isodate
 pproxy
-pycryptodome
 requests
 scrapy
 ScrapyProxyCompat

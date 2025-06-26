@@ -6,7 +6,6 @@ from html import unescape
 
 import requests
 import unidecode
-from isodate import parse_duration
 from itemadapter import ItemAdapter
 from scrapy.exceptions import DropItem
 
